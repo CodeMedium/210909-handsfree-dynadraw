@@ -74,10 +74,34 @@ var editing_D = false;
   handsfree = new Handsfree({hands: true, debugger: true})
   handsfree.enablePlugins('browser')
   handsfree.plugin.pinchScroll.disable()
-  handsfree.debug.$wrap.style.position = 'fixed'
-  handsfree.debug.$wrap.style.bottom = 0
-  handsfree.debug.$wrap.style.right = 0
-  handsfree.debug.$wrap.style.width = '20%'
+
+  // Create the start screen
+  const $wrap = document.createElement('div')
+  $wrap.style.width = '500px'
+  $wrap.style.padding = '20px'
+  $wrap.style.position = 'fixed'
+  $wrap.style.zindex = 99
+  $wrap.style.top = '100px'
+  $wrap.style.left = '50%'
+  $wrap.style.marginLeft = '-250px'
+  $wrap.style.color = '#fff'
+  $wrap.style.background = '#444'
+  $wrap.classList.add('handsfree-show-when-stopped')
+  $wrap.innerHTML = `
+    <h1>Handsfree Dynadraw</h1>
+    <p><video src="https://i.giphy.com/media/2QZyghBOJ2yAeO8QBA/giphy.mp4" style="width: 100%"></video>
+    <ul>
+    <li>Pinch your <strong>right</strong> hand's thumb and index finger 👌
+    <li>Move pinched hand to draw
+    <li>Pinch other fingers to swap colors
+    <li>Use mouse to adjust the sliders at the top of the screen
+    </ul>
+    <p>
+      <button class="handsfree-show-when-stopped handsfree-hide-when-loading" style="width: 100%" id="start" onclick="startHandsfree()">Start webcam</button>
+      <button class="handsfree-show-when-loading" style="width: 100%">Loading...</button>
+      <button class="handsfree-show-when-started" style="width: 100%" onclick="handsfree.stop()">Stop webcam</button>
+  `
+  document.body.appendChild($wrap)
 
   // Change colors with fingers
   handsfree.use('changeColors', ({hands}) => {
@@ -89,6 +113,19 @@ var editing_D = false;
     if (hands?.pinchState?.[0][1] === 'start') drawColor = params.colors[6]
     if (hands?.pinchState?.[0][2] === 'start') drawColor = params.colors[7]
     if (hands?.pinchState?.[0][3] === 'start') drawColor = params.colors[0]
+  })
+}
+
+function startHandsfree () {
+  handsfree.start(() => {
+    // normally this isn't needed but there's a bug with displaying the feedback
+    setTimeout(() => {
+      handsfree.showDebugger()
+      handsfree.debug.$wrap.style.position = 'fixed'
+      handsfree.debug.$wrap.style.bottom = 0
+      handsfree.debug.$wrap.style.right = 0
+      handsfree.debug.$wrap.style.width = '25%'
+    })
   })
 }
 
