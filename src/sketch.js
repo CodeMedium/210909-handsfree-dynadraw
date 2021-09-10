@@ -60,18 +60,36 @@ var editing_D = false;
     colors: ['#ffffff', '#ff628c', '#FF9D00', '#fad000', '#2ca300', '#2EC4B6', '#5D37F0', '#00193c', '#00078']
   }, getURLParams())
 
-  createCanvas(windowWidth, windowHeight);
-  background(params.bg);
-  stroke(0);
-  fill(0);
-  smooth();  
-
   ppy = py = height/2;
   ppx = px = width/2;
   vx = vy = 0;
   drawColor = params.colors[1]
   
 	createCanvas(windowWidth, windowHeight)
+  background(params.bg);
+  stroke(0);
+  fill(0);
+  smooth();  
+
+  handsfree = new Handsfree({hands: true, debugger: true})
+  handsfree.enablePlugins('browser')
+  handsfree.plugin.pinchScroll.disable()
+  handsfree.debug.$wrap.style.position = 'fixed'
+  handsfree.debug.$wrap.style.bottom = 0
+  handsfree.debug.$wrap.style.right = 0
+  handsfree.debug.$wrap.style.width = '20%'
+
+  // Change colors with fingers
+  handsfree.use('changeColors', ({hands}) => {
+    if (hands?.pinchState?.[0][0] === 'start') drawColor = params.colors[1]
+    // if (hands?.pinchState?.[1][0] === 'start') drawColor = params.colors[1]
+    if (hands?.pinchState?.[1][1] === 'start') drawColor = params.colors[2]
+    if (hands?.pinchState?.[1][2] === 'start') drawColor = params.colors[4]
+    if (hands?.pinchState?.[1][3] === 'start') drawColor = params.colors[5]
+    if (hands?.pinchState?.[0][1] === 'start') drawColor = params.colors[6]
+    if (hands?.pinchState?.[0][2] === 'start') drawColor = params.colors[7]
+    if (hands?.pinchState?.[0][3] === 'start') drawColor = params.colors[0]
+  })
 }
 
 //----------------------------------------------------------------
@@ -89,9 +107,16 @@ function draw(){
 }
 
 //----------------------------------------------------------------
-function updateTrace(){
-  var dy = py - mouseY;   // Compute displacement from the cursor
-  var dx = px - mouseX;
+function updateTrace () {
+  let dy = py - mouseY;   // Compute displacement from the cursor
+  let dx = px - mouseX;
+
+  // handsfree
+  if (handsfree.model.hands.data?.pointer?.[1]?.x) {
+    dy = py - handsfree.model.hands.data.pointer[1].y;   // Compute displacement from the cursor
+    dx = px - handsfree.model.hands.data.pointer[1].x;
+  }
+
   var fx = -k * dx;       // Hooke's law, Force = - k * displacement
   var fy = -k * dy;
   var ay = fy / mass;     // Acceleration, computed from F = ma
@@ -107,7 +132,7 @@ function updateTrace(){
 //----------------------------------------------------------------
 function drawTrace(){
 
-  if (mousePressed){
+  if (mouseIsPressed || handsfree.model.hands.data?.pinchState?.[1][0] === 'held'){
     var vh = sqrt(vx*vx + vy*vy);                    // Compute the (Pythagorean) velocity,
     var th = max_th - min(vh*ductus, max_th);        // which we use (scaled, clamped and
     th = max(1.0, th);                               // inverted) in computing...
@@ -136,10 +161,11 @@ function mousePressed() {
   } else if ((abs(mouseX - D_x) < tol) && (mouseY > sliderh) && (mouseY < sliderh*2)){
     editing_D = true;
     editing_K = false;
+  // Start a new stroke
   } else {
     editing_K = false;
     editing_D = false;
-    background (params.bg);
+    // background(params.bg);
   }
 }
 
